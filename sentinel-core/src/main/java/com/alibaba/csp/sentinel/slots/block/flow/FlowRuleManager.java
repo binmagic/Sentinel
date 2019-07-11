@@ -24,7 +24,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.log.RecordLog;
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 import com.alibaba.csp.sentinel.util.AssertUtil;
 import com.alibaba.csp.sentinel.util.StringUtil;
 import com.alibaba.csp.sentinel.node.metric.MetricTimerListener;
@@ -52,11 +54,14 @@ public class FlowRuleManager {
     private static SentinelProperty<List<FlowRule>> currentProperty = new DynamicSentinelProperty<List<FlowRule>>();
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static final ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1,
-        new NamedThreadFactory("sentinel-metrics-record-task", true));
+    private static final ScheduledExecutorService SCHEDULER;
+//    Executors.newScheduledThreadPool(1,
+//        new NamedThreadFactory("sentinel-metrics-record-task", true));
 
     static {
         currentProperty.addListener(LISTENER);
+        ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
+        SCHEDULER = threadPool.getScheduledExecutor("sentinel-metrics-record-task", 1);
         SCHEDULER.scheduleAtFixedRate(new MetricTimerListener(), 0, 1, TimeUnit.SECONDS);
     }
 

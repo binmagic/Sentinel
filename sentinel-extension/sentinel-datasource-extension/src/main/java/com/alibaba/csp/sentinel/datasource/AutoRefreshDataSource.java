@@ -20,7 +20,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.log.RecordLog;
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 
 /**
  * A {@link ReadableDataSource} automatically fetches the backend data.
@@ -50,20 +52,20 @@ public abstract class AutoRefreshDataSource<S, T> extends AbstractDataSource<S, 
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
     private void startTimerService() {
-        service = Executors.newScheduledThreadPool(1,
-            new NamedThreadFactory("sentinel-datasource-auto-refresh-task", true));
-        service.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (!isModified()) {
-                        return;
-                    }
-                    T newValue = loadConfig();
-                    getProperty().updateValue(newValue);
-                } catch (Throwable e) {
-                    RecordLog.info("loadConfig exception", e);
+        ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
+        service = threadPool.getScheduledExecutor("sentinel-datasource-auto-refresh-task", 1);
+//        service = Executors.newScheduledThreadPool(1,
+//            new NamedThreadFactory("sentinel-datasource-auto-refresh-task", true));
+        service.scheduleAtFixedRate(() ->
+        {
+            try {
+                if (!isModified()) {
+                    return;
                 }
+                T newValue = loadConfig();
+                getProperty().updateValue(newValue);
+            } catch (Throwable e) {
+                RecordLog.info("loadConfig exception", e);
             }
         }, recommendRefreshMs, recommendRefreshMs, TimeUnit.MILLISECONDS);
     }

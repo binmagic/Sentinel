@@ -25,12 +25,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.alibaba.csp.sentinel.Constants;
 import com.alibaba.csp.sentinel.EntryType;
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.log.RecordLog;
 import com.alibaba.csp.sentinel.property.DynamicSentinelProperty;
 import com.alibaba.csp.sentinel.property.SentinelProperty;
 import com.alibaba.csp.sentinel.property.SimplePropertyListener;
 import com.alibaba.csp.sentinel.slotchain.ResourceWrapper;
 import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 
 /**
  * <p>
@@ -89,12 +91,15 @@ public class SystemRuleManager {
     private static SentinelProperty<List<SystemRule>> currentProperty = new DynamicSentinelProperty<List<SystemRule>>();
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private final static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1,
-        new NamedThreadFactory("sentinel-system-status-record-task", true));
+    private final static ScheduledExecutorService scheduler;
+//    = Executors.newScheduledThreadPool(1,
+//        new NamedThreadFactory("sentinel-system-status-record-task", true));
 
     static {
         checkSystemStatus.set(false);
         statusListener = new SystemStatusListener();
+        ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
+        scheduler = threadPool.getScheduledExecutor("sentinel-system-status-record-task", 1);
         scheduler.scheduleAtFixedRate(statusListener, 5, 1, TimeUnit.SECONDS);
         currentProperty.addListener(listener);
     }

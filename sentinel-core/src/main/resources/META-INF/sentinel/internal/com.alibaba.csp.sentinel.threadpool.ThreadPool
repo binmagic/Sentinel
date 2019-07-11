@@ -1,0 +1,1 @@
+sentinel=com.alibaba.csp.sentinel.threadpool.support.sentinel.SentinelThreadPool

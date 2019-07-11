@@ -25,8 +25,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.log.RecordLog;
 
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 import io.netty.channel.Channel;
 
 /**
@@ -39,7 +41,13 @@ import io.netty.channel.Channel;
 public class ConnectionPool {
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static final ScheduledExecutorService TIMER = Executors.newScheduledThreadPool(2);
+    private static final ScheduledExecutorService TIMER;
+    //= Executors.newScheduledThreadPool(2);
+
+    static{
+        ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
+        TIMER = threadPool.getScheduledExecutor("sentinel-connection-pool-timer", 2);
+    }
 
     /**
      * Format: ("ip:port", connection)

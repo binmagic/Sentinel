@@ -17,11 +17,13 @@ package com.alibaba.csp.sentinel.slots.block.degrade;
 
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
 import com.alibaba.csp.sentinel.context.Context;
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.node.ClusterNode;
 import com.alibaba.csp.sentinel.node.DefaultNode;
 import com.alibaba.csp.sentinel.slots.block.AbstractRule;
 import com.alibaba.csp.sentinel.slots.block.RuleConstant;
 import com.alibaba.csp.sentinel.slots.clusterbuilder.ClusterBuilderSlot;
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -56,8 +58,15 @@ import java.util.concurrent.atomic.AtomicLong;
 public class DegradeRule extends AbstractRule {
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static ScheduledExecutorService pool = Executors.newScheduledThreadPool(
-        Runtime.getRuntime().availableProcessors(), new NamedThreadFactory("sentinel-degrade-reset-task", true));
+    private final static ScheduledExecutorService pool;
+//    Executors.newScheduledThreadPool(
+//        Runtime.getRuntime().availableProcessors(), new NamedThreadFactory("sentinel-degrade-reset-task", true));
+
+
+    static{
+        ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
+        pool = threadPool.getScheduledExecutor("sentinel-degrade-reset-task", Runtime.getRuntime().availableProcessors());
+    }
 
     public DegradeRule() {}
 

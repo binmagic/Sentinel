@@ -34,7 +34,9 @@ import com.alibaba.csp.sentinel.cluster.request.ClusterRequest;
 import com.alibaba.csp.sentinel.cluster.request.Request;
 import com.alibaba.csp.sentinel.cluster.response.ClusterResponse;
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.log.RecordLog;
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 import com.alibaba.csp.sentinel.util.AssertUtil;
 
 import io.netty.bootstrap.Bootstrap;
@@ -61,8 +63,15 @@ import io.netty.util.concurrent.GenericFutureListener;
 public class NettyTransportClient implements ClusterTransportClient {
 
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private static final ScheduledExecutorService SCHEDULER = Executors.newScheduledThreadPool(1,
-        new NamedThreadFactory("sentinel-cluster-transport-client-scheduler"));
+    private static final ScheduledExecutorService SCHEDULER;
+//    = Executors.newScheduledThreadPool(1,
+//        new NamedThreadFactory("sentinel-cluster-transport-client-scheduler"));
+
+    static{
+        ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
+        SCHEDULER = threadPool.getScheduledExecutor("sentinel-cluster-transport-client-scheduler", 1);
+    }
+
 
     public static final int RECONNECT_DELAY_MS = 2000;
 

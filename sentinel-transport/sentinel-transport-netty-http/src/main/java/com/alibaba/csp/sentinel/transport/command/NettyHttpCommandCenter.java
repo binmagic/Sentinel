@@ -15,17 +15,20 @@
  */
 package com.alibaba.csp.sentinel.transport.command;
 
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import com.alibaba.csp.sentinel.command.CommandHandler;
 import com.alibaba.csp.sentinel.command.CommandHandlerProvider;
 import com.alibaba.csp.sentinel.concurrent.NamedThreadFactory;
-import com.alibaba.csp.sentinel.spi.SpiOrder;
-import com.alibaba.csp.sentinel.transport.command.netty.HttpServer;
+import com.alibaba.csp.sentinel.extension.ExtensionLoader;
 import com.alibaba.csp.sentinel.log.RecordLog;
+import com.alibaba.csp.sentinel.spi.SpiOrder;
+import com.alibaba.csp.sentinel.threadpool.ThreadPool;
 import com.alibaba.csp.sentinel.transport.CommandCenter;
+import com.alibaba.csp.sentinel.transport.command.netty.HttpServer;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Implementation of {@link CommandCenter} based on Netty HTTP library.
@@ -33,40 +36,45 @@ import com.alibaba.csp.sentinel.transport.CommandCenter;
  * @author Eric Zhao
  */
 @SpiOrder(SpiOrder.LOWEST_PRECEDENCE - 100)
-public class NettyHttpCommandCenter implements CommandCenter {
+public class NettyHttpCommandCenter implements CommandCenter
+{
 
-    private final HttpServer server = new HttpServer();
+	private final HttpServer server = new HttpServer();
 
-    @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    private final ExecutorService pool = Executors.newSingleThreadExecutor(
-        new NamedThreadFactory("sentinel-netty-command-center-executor"));
+	@SuppressWarnings("PMD.ThreadPoolCreationRule")
+	private final ExecutorService pool = Executors.newSingleThreadExecutor(new NamedThreadFactory("sentinel-netty-command-center-executor"));
 
-    @Override
-    public void start() throws Exception {
-        pool.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    server.start();
-                } catch (Exception ex) {
-                    RecordLog.info("Start netty server error", ex);
-                    ex.printStackTrace();
-                    System.exit(-1);
-                }
-            }
-        });
-    }
 
-    @Override
-    public void stop() throws Exception {
-        server.close();
-        pool.shutdownNow();
-    }
+	@Override
+	public void start() throws Exception
+	{
+		pool.submit(() ->
+		{
+			try
+			{
+				server.start();
+			}
+			catch(Exception ex)
+			{
+				RecordLog.info("Start netty server error", ex);
+				ex.printStackTrace();
+				System.exit(-1);
+			}
+		});
+	}
 
-    @Override
-    public void beforeStart() throws Exception {
-        // Register handlers
-        Map<String, CommandHandler> handlers = CommandHandlerProvider.getInstance().namedHandlers();
-        server.registerCommands(handlers);
-    }
+	@Override
+	public void stop() throws Exception
+	{
+		server.close();
+		pool.shutdownNow();
+	}
+
+	@Override
+	public void beforeStart() throws Exception
+	{
+		// Register handlers
+		Map<String, CommandHandler> handlers = CommandHandlerProvider.getInstance().namedHandlers();
+		server.registerCommands(handlers);
+	}
 }

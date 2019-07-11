@@ -15,36 +15,33 @@
  */
 package com.alibaba.csp.sentinel.log;
 
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import com.alibaba.csp.sentinel.log.sentinel.SentinelLoggerAdapter;
 
 /**
  * Logger for command center.
  */
-public class CommandCenterLog extends LogBase {
+public class CommandCenterLog extends LogBase
+{
 
-    private static final Logger heliumRecordLog = Logger.getLogger("cspCommandCenterLog");
-    private static final String FILE_NAME = "command-center.log";
-    private static Handler logHandler = null;
+	public static final com.alibaba.csp.sentinel.log.Logger log = LoggerFactory.getLogger(SentinelLoggerAdapter.CSP_COMMAND_CENTER_LOG);
 
-    static {
-        logHandler = makeLogger(FILE_NAME, heliumRecordLog);
-    }
+	public static void info(String detail, Object... params)
+	{
+		log.info(detail, params);
+	}
 
-    public static void info(String detail, Object... params) {
-        log(heliumRecordLog, logHandler, Level.INFO, detail, params);
-    }
+	public static void info(String detail, Throwable e)
+	{
+		log.info(detail, e);
+	}
 
-    public static void info(String detail, Throwable e) {
-        log(heliumRecordLog, logHandler, Level.INFO, detail, e);
-    }
+	public static void warn(String detail, Object... params)
+	{
+		log.warn(detail, params);
+	}
 
-    public static void warn(String detail, Object... params) {
-        log(heliumRecordLog, logHandler, Level.WARNING, detail, params);
-    }
-
-    public static void warn(String detail, Throwable e) {
-        log(heliumRecordLog, logHandler, Level.WARNING, detail, e);
-    }
+	public static void warn(String detail, Throwable e)
+	{
+		log.warn(detail, e);
+	}
 }

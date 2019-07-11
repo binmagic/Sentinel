@@ -40,6 +40,8 @@ import static com.alibaba.csp.sentinel.util.ConfigUtil.addSeparator;
  */
 public class LogBase {
 
+    private static final com.alibaba.csp.sentinel.log.Logger log = LoggerFactory.getLogger("logBase");
+
     public static final String LOG_DIR = "csp.sentinel.log.dir";
     public static final String LOG_NAME_USE_PID = "csp.sentinel.log.use.pid";
     public static final String LOG_OUTPUT_TYPE = "csp.sentinel.log.output.type";
@@ -69,8 +71,7 @@ public class LogBase {
             initialize();
             loadProperties();
         } catch (Throwable t) {
-            System.err.println("[LogBase] FATAL ERROR when initializing log class");
-            t.printStackTrace();
+            log.error("[LogBase] FATAL ERROR when initializing log class", t);
         }
     }
 
@@ -88,10 +89,10 @@ public class LogBase {
         if (!LOG_OUTPUT_TYPE_FILE.equalsIgnoreCase(logOutputType) && !LOG_OUTPUT_TYPE_CONSOLE.equalsIgnoreCase(logOutputType)) {
             logOutputType = LOG_OUTPUT_TYPE_FILE;
         }
-        System.out.println("INFO: log output type is: " + logOutputType);
+        log.info("log output type is: " + logOutputType);
 
         logCharSet = properties.getProperty(LOG_CHARSET) == null ? logCharSet : properties.getProperty(LOG_CHARSET);
-        System.out.println("INFO: log charset is: " + logCharSet);
+        log.info("log charset is: " + logCharSet);
 
 
         logBaseDir = properties.getProperty(LOG_DIR) == null ? logBaseDir : properties.getProperty(LOG_DIR);
@@ -99,15 +100,15 @@ public class LogBase {
         File dir = new File(logBaseDir);
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
-                System.err.println("ERROR: create log base dir error: " + logBaseDir);
+                log.error("create log base dir error: " + logBaseDir);
             }
         }
-        System.out.println("INFO: log base dir is: " + logBaseDir);
+        log.info("log base dir is: " + logBaseDir);
 
 
         String usePid = properties.getProperty(LOG_NAME_USE_PID);
         logNameUsePid = "true".equalsIgnoreCase(usePid);
-        System.out.println("INFO: log name use pid is: " + logNameUsePid);
+        log.info("log name use pid is: " + logNameUsePid);
     }
 
 
