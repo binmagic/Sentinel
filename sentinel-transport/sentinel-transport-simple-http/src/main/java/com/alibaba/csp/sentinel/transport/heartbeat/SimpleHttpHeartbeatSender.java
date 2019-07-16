@@ -81,7 +81,16 @@ public class SimpleHttpHeartbeatSender implements HeartbeatSender {
 
     @Override
     public long intervalMs() {
-        return DEFAULT_INTERVAL;
+        Long intervalInConfig = TransportConfig.getHeartbeatIntervalMs();
+        if (isValidHeartbeatInterval(intervalInConfig)) {
+            return intervalInConfig;
+        } else {
+            return DEFAULT_INTERVAL;
+        }
+    }
+
+    private boolean isValidHeartbeatInterval(Long interval) {
+        return interval != null && interval > 0;
     }
 
     private InetSocketAddress getAvailableAddress() {

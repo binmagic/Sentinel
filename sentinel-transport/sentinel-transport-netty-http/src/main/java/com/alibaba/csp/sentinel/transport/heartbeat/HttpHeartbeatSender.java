@@ -129,6 +129,15 @@ public class HttpHeartbeatSender implements HeartbeatSender {
 
     @Override
     public long intervalMs() {
-        return 5000;
+        Long intervalInConfig = TransportConfig.getHeartbeatIntervalMs();
+        if (isValidHeartbeatInterval(intervalInConfig)) {
+            return intervalInConfig;
+        } else {
+            return 5000;
+        }
+    }
+
+    private boolean isValidHeartbeatInterval(Long interval) {
+        return interval != null && interval > 0;
     }
 }

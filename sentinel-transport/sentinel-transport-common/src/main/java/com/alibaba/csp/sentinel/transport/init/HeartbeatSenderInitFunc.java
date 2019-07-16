@@ -45,9 +45,6 @@ public class HeartbeatSenderInitFunc implements InitFunc
 		{
 			ThreadPool threadPool = ExtensionLoader.getExtensionLoader(ThreadPool.class).getActiveExtension();
 			pool = threadPool.getScheduledExecutor("sentinel-heartbeat-send-task", 2);
-//                    new ScheduledThreadPoolExecutor(2,
-//                new NamedThreadFactory("sentinel-heartbeat-send-task", true),
-//                new DiscardOldestPolicy());
 		}
 	}
 
@@ -62,14 +59,11 @@ public class HeartbeatSenderInitFunc implements InitFunc
 		}
 
 		initSchedulerIfNeeded();
-		long interval = retrieveInterval(sender);
-		setIntervalIfNotExists(interval);
-		scheduleHeartbeatTask(sender, interval);
-	}
 
-	private boolean isValidHeartbeatInterval(Long interval)
-	{
-		return interval != null && interval > 0;
+		scheduleHeartbeatTask(sender);
+
+		RecordLog.info("[HeartbeatSenderInit] HeartbeatSender started: "
+				+ sender.getClass().getCanonicalName());
 	}
 
 	private void setIntervalIfNotExists(long interval)
@@ -77,42 +71,32 @@ public class HeartbeatSenderInitFunc implements InitFunc
 		SentinelConfig.setConfig(TransportConfig.HEARTBEAT_INTERVAL_MS, String.valueOf(interval));
 	}
 
-	long retrieveInterval(/*@NonNull*/ HeartbeatSender sender)
+	private void scheduleHeartbeatTask(/*@NonNull*/ final HeartbeatSender sender)
 	{
-		Long intervalInConfig = TransportConfig.getHeartbeatIntervalMs();
-		if(isValidHeartbeatInterval(intervalInConfig))
-		{
-			RecordLog.info("[HeartbeatSenderInitFunc] Using heartbeat interval "
-					+ "in Sentinel config property: " + intervalInConfig);
-			return intervalInConfig;
-		}
-		else
-		{
-			long senderInterval = sender.intervalMs();
-			RecordLog.info("[HeartbeatSenderInit] Heartbeat interval not configured in "
-					+ "config property or invalid, using sender default: " + senderInterval);
-			return senderInterval;
-		}
-	}
+		long interval = sender.intervalMs();
 
-	private void scheduleHeartbeatTask(/*@NonNull*/ final HeartbeatSender sender, /*@Valid*/ long interval)
-	{
-		pool.scheduleAtFixedRate(new Runnable()
+		if(interval == -1)
 		{
-			@Override
-			public void run()
+			RecordLog.warn("[HeartbeatSender] Send heartbeat stop");
+			return;
+		}
+
+		setIntervalIfNotExists(interval);
+
+		pool.schedule(() ->
+		{
+			try
 			{
-				try
-				{
-					sender.sendHeartbeat();
-				}
-				catch(Throwable e)
-				{
-					RecordLog.warn("[HeartbeatSender] Send heartbeat error", e);
-				}
+				sender.sendHeartbeat();
 			}
-		}, 5000, interval, TimeUnit.MILLISECONDS);
-		RecordLog.info("[HeartbeatSenderInit] HeartbeatSender started: "
-				+ sender.getClass().getCanonicalName());
+			catch(Throwable e)
+			{
+				RecordLog.warn("[HeartbeatSender] Send heartbeat error", e);
+			}
+
+			scheduleHeartbeatTask(sender);
+
+		}, interval, TimeUnit.MILLISECONDS);
+
 	}
 }
